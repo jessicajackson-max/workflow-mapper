@@ -151,8 +151,10 @@ input:focus-visible, textarea:focus-visible { outline: 3px solid var(--focus); o
 /* status (done / skipped) */
 .seg.sm button { font-size: 11px; height: 28px; padding: 0 10px; }
 .seg.sm button[aria-pressed="true"].skip { background: var(--ghost); border-color: var(--ghost); }
-.status-lbl { font-size: 11px; font-weight: 500; letter-spacing: 0.02em; color: var(--label); white-space: nowrap; }
-.tagrow .status-lbl { text-align: right; }
+.status-tog { font: inherit; font-size: 11px; font-weight: 700; letter-spacing: -0.02em; height: 22px; padding: 0 10px; border-radius: 60px; border: 0; background: var(--bg); color: var(--fg); box-shadow: inset 0 0 0 1px var(--fg); cursor: pointer; white-space: nowrap; transition: filter 120ms ease; }
+.status-tog.skip { background: var(--ghost); color: var(--white); box-shadow: inset 0 0 0 1px var(--ghost); }
+.status-tog:hover { filter: brightness(0.92); }
+.status-tog:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
 
 /* timeline */
 .tl-wrap { overflow-x: auto; padding: 12px 12px 12px 0; }
@@ -211,7 +213,7 @@ input:focus-visible, textarea:focus-visible { outline: 3px solid var(--focus); o
 .tagrow .name { font-weight: 700; overflow-wrap: anywhere; }
 .tagrow .ghosttoggle { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 500; white-space: nowrap; cursor: pointer; }
 .tagrow .ghosttoggle input { width: 16px; height: 16px; margin: 0; accent-color: var(--fg); }
-@media (max-width: 760px) { .tagrow { grid-template-columns: 64px 28px 1fr; } .tagrow .chips { grid-column: 2 / -1; } .tagrow .status-lbl { text-align: left; } }
+@media (max-width: 760px) { .tagrow { grid-template-columns: 64px 28px 1fr; } .tagrow .chips { grid-column: 2 / -1; } }
 .take { font: inherit; font-size: 14px; font-weight: 700; letter-spacing: -0.02em; height: 32px; padding: 0 14px; border-radius: 60px; border: 0; background: var(--bg); color: var(--fg); box-shadow: inset 0 0 0 1px var(--fg); cursor: pointer; white-space: nowrap; }
 .take[aria-pressed="true"] { background: var(--fg); color: var(--bg); }
 .take:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
@@ -352,11 +354,7 @@ summary:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
       </div>
 
       <div class="card shadow">
-        <div class="between">
-          <h3>Tag each step</h3>
-          <button type="button" class="btn secondary" id="add-ghost">+ Add a step I skip</button>
-        </div>
-        <p class="muted">Possible is only for steps you marked skipped. To change a step's status, go back to the list.</p>
+        <h3>Tag each step</h3>
         <div class="tasklist" id="taglist"></div>
       </div>
 
@@ -517,15 +515,19 @@ summary:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
       row.appendChild(sw);
       row.appendChild(el('span', 'disc', String(i + 1)));
       if (t.name.trim()) row.appendChild(el('span', 'name', t.name));
-      else { var nm = el('input', 'name'); nm.type = 'text'; nm.placeholder = 'Name the step you skip'; nm.setAttribute('aria-label', 'Step name'); nm.addEventListener('input', function () { t.name = nm.value; save(); renderTimeline($('my-tl'), state.tasks, state.chosen); }); row.appendChild(nm); }
-      row.appendChild(el('span', 'status-lbl', isGhost(t) ? 'Skipped' : 'Done'));
+      else { var nm = el('input', 'name'); nm.type = 'text'; nm.placeholder = 'Step ' + (i + 1); nm.setAttribute('aria-label', 'Step ' + (i + 1) + ' name'); nm.addEventListener('input', function () { t.name = nm.value; save(); renderTimeline($('my-tl'), state.tasks, state.chosen); }); row.appendChild(nm); }
+      // Status toggle: flip a step to skipped here and Possible unlocks on the spot.
+      var st = el('button', 'status-tog' + (isGhost(t) ? ' skip' : ''), isGhost(t) ? 'Skipped' : 'Done'); st.type = 'button';
+      st.setAttribute('aria-pressed', String(isGhost(t))); st.title = isGhost(t) ? 'Marked skipped. Click to mark done.' : 'Marked done. Click to mark skipped.';
+      st.addEventListener('click', function () { setSkip(t, !isGhost(t)); save(); applyTag(); renderTag(); });
+      row.appendChild(st);
       var chips = el('div', 'chips');
       TAG_ORDER.forEach(function (k) {
         var tb = el('button', 'tagchip ' + k, TAGS[k]); tb.type = 'button'; tb.setAttribute('aria-pressed', String(t.tag === k));
         var locked = k === 'possible' && !isGhost(t);
         if (locked) { tb.setAttribute('aria-disabled', 'true'); tb.title = POSSIBLE_LOCK; }
         tb.addEventListener('click', function () {
-          if (locked) { toast(POSSIBLE_LOCK + ' Change the status in step 1.'); return; }
+          if (locked) { toast('Mark this step skipped first. Click "Done" on this row to flip it.'); return; }
           t.tag = (t.tag === k ? null : k); if (state.chosen === t.id && (t.tag === 'mine' || !t.tag)) state.chosen = null; save(); applyTag(); renderTag();
         });
         chips.appendChild(tb);
@@ -539,7 +541,6 @@ summary:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
     else if (!state.chosen) why.textContent = 'Every step is tagged. Now flip the switch on the one Faster, Better, or Possible step you\'ll work on this week. Mine stays yours.';
     else why.textContent = '';
   }
-  $('add-ghost').addEventListener('click', function () { newTask('', '', null, true); save(); renderTag(); var inputs = document.querySelectorAll('#taglist input.name'); if (inputs.length) inputs[inputs.length - 1].focus(); });
 
   function setSub(name) {
     state.sub = name; save();
