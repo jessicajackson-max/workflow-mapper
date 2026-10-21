@@ -7,7 +7,7 @@
 <title>Workflow Mapper</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700;800&display=swap">
 <style>
-/* Layout: one column, max 1040px, two passes: list the steps, then tag them on a timeline where skipped steps float above the line. aiEDU system: Poppins on the 34/22/18/14/11 rungs, square boxes with 1px navy rules, hard offset shadow in the accent 500, Teal 400 primary action with a navy label, 200-step taxonomy chips with navy labels, pills for furniture. */
+/* Layout: one column, max 1040px, three screens: Start here, list the steps (with done/skipped status), then tag them on a timeline where skipped steps float above the line. aiEDU system: Poppins on the 34/22/18/14/11 rungs, square boxes with 1px navy rules, hard offset shadow in the accent 500, Teal 400 primary action with a navy label, 200-step taxonomy chips with navy labels, pills for furniture. */
 :root {
   --navy: #222244; --white: #ffffff; --light-grey: #f7f7f7; --grey-caption: #393939; --grey-label: #757575; --grey-ring: #c9cbd4; --grey-body-inverted: #e8e9ee;
   --teal-100: #f2ffff; --teal-200: #d9faf9; --teal-300: #a1f0ee; --teal-400: #00d9d3; --teal-500: #02a39f; --teal-600: #006e6a;
@@ -131,8 +131,28 @@ input:focus-visible, textarea:focus-visible { outline: 3px solid var(--focus); o
 
 /* tag key */
 .tagkey { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px 24px; background: var(--card); padding: 24px; }
+.tagkey.compact { padding: 16px 24px; }
 .keyitem { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; font-size: 14px; line-height: 1.3; }
 .keyitem .chip { flex: 0 0 auto; }
+.keyitem details.research { border: 0; padding: 0; margin-top: -2px; }
+.keyitem details.research summary { font-size: 11px; letter-spacing: 0.02em; text-transform: none; color: var(--label); text-decoration: underline; }
+.keyitem details.research summary::before { content: none; }
+.keyitem details.research > div { font-size: 11px; line-height: 1.4; color: var(--muted); padding-top: 6px; }
+
+/* start here */
+.stack.mid { gap: 24px; }
+.moves { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+@media (max-width: 760px) { .moves { grid-template-columns: 1fr; } }
+.move { display: grid; grid-template-columns: 28px 1fr; gap: 12px; align-items: start; background: var(--field-bg); border: 1px solid var(--rule); padding: 16px; }
+.move .disc { width: 24px; height: 24px; border-radius: 50%; background: var(--fg); color: var(--bg); font-size: 11px; font-weight: 700; display: grid; place-items: center; margin-top: 1px; }
+.move h4 { font-size: 18px; margin-bottom: 4px; }
+.move p { font-size: 14px; color: var(--muted); }
+
+/* status (done / skipped) */
+.seg.sm button { font-size: 11px; height: 28px; padding: 0 10px; }
+.seg.sm button[aria-pressed="true"].skip { background: var(--ghost); border-color: var(--ghost); }
+.status-lbl { font-size: 11px; font-weight: 500; letter-spacing: 0.02em; color: var(--label); white-space: nowrap; }
+.tagrow .status-lbl { text-align: right; }
 
 /* timeline */
 .tl-wrap { overflow-x: auto; padding: 12px 12px 12px 0; }
@@ -151,7 +171,9 @@ input:focus-visible, textarea:focus-visible { outline: 3px solid var(--focus); o
 .tl .box { position: relative; z-index: 1; background: var(--field-bg); border: 1px solid var(--rule); padding: 12px; display: flex; flex-direction: column; gap: 4px; min-height: 72px; }
 .tl .box .t { font-size: 14px; font-weight: 700; overflow-wrap: anywhere; }
 .tl .box .d { font-size: 11px; line-height: 1.4; color: var(--muted); overflow-wrap: anywhere; }
-.tl .box .ghost-lbl { font-size: 11px; font-weight: 700; letter-spacing: 0.13em; text-transform: uppercase; color: var(--ghost); }
+.tl .box .ghost-lbl { font-size: 11px; font-weight: 500; letter-spacing: 0.02em; color: var(--ghost); margin-top: auto; padding-top: 4px; }
+.tl .box .tag { font-size: 11px; font-weight: 700; color: var(--fg); padding-top: 2px; }
+.tl .box .act { font-size: 11px; line-height: 1.4; color: var(--fg); overflow-wrap: anywhere; }
 .tl .box.ghost { border-style: dashed; border-color: var(--ghost); }
 .tl .box.faster { background: var(--tag-faster-chip); } .tl .box.better { background: var(--tag-better-chip); } .tl .box.possible { background: var(--tag-possible-chip); } .tl .box.mine { background: var(--tag-mine-chip); }
 .tl .box.chosen { box-shadow: 10px 10px 0 0 var(--accent-ink); }
@@ -163,7 +185,7 @@ input:focus-visible, textarea:focus-visible { outline: 3px solid var(--focus); o
 
 /* task list editor */
 .tasklist { display: flex; flex-direction: column; gap: 12px; }
-.trow { display: grid; grid-template-columns: 28px 1fr 1fr auto; gap: 12px; align-items: center; background: var(--field-bg); border: 1px solid var(--rule); padding: 12px; }
+.trow { display: grid; grid-template-columns: 28px minmax(140px, 1fr) minmax(140px, 1fr) auto auto; gap: 12px; align-items: center; background: var(--field-bg); border: 1px solid var(--rule); padding: 12px; }
 .trow.ghost { border-style: dashed; border-color: var(--ghost); }
 .trow .disc { width: 24px; height: 24px; border-radius: 50%; background: var(--fg); color: var(--bg); font-size: 11px; font-weight: 700; display: grid; place-items: center; }
 .trow.ghost .disc { background: var(--ghost); color: var(--white); }
@@ -171,8 +193,11 @@ input:focus-visible, textarea:focus-visible { outline: 3px solid var(--focus); o
 .trow input.name { font-weight: 700; }
 .trow .ctl { display: flex; gap: 4px; align-items: center; }
 .trow .ctl .pillbtn { height: 22px; padding: 0 8px; }
-@media (max-width: 700px) { .trow { grid-template-columns: 28px 1fr; } .trow .ctl { grid-column: 2; } }
-.tagrow { display: grid; grid-template-columns: 64px 28px minmax(120px, 1fr) auto; gap: 12px; align-items: center; background: var(--field-bg); border: 1px solid var(--rule); padding: 12px; }
+@media (max-width: 900px) { .trow { grid-template-columns: 28px 1fr 1fr; } .trow .seg { grid-column: 2 / 3; } .trow .ctl { grid-column: 3; justify-content: flex-end; } }
+@media (max-width: 700px) { .trow { grid-template-columns: 28px 1fr; } .trow input, .trow .seg, .trow .ctl { grid-column: 2; } .trow .ctl { justify-content: flex-end; } }
+.tagrow { display: grid; grid-template-columns: 64px 28px minmax(120px, 1fr) auto auto; gap: 12px; align-items: center; background: var(--field-bg); border: 1px solid var(--rule); padding: 12px; }
+.tagchip[aria-disabled="true"] { opacity: .45; cursor: not-allowed; }
+.tagchip[aria-disabled="true"]:hover { filter: none; }
 .tagrow.on { background: var(--accent-soft); }
 .sw { display: flex; flex-direction: column; align-items: center; gap: 4px; }
 .sw .lbl { font-size: 11px; font-weight: 500; line-height: 1.4; color: var(--label); white-space: nowrap; }
@@ -186,7 +211,7 @@ input:focus-visible, textarea:focus-visible { outline: 3px solid var(--focus); o
 .tagrow .name { font-weight: 700; overflow-wrap: anywhere; }
 .tagrow .ghosttoggle { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 500; white-space: nowrap; cursor: pointer; }
 .tagrow .ghosttoggle input { width: 16px; height: 16px; margin: 0; accent-color: var(--fg); }
-@media (max-width: 760px) { .tagrow { grid-template-columns: 64px 28px 1fr; } .tagrow .chips { grid-column: 2 / -1; } }
+@media (max-width: 760px) { .tagrow { grid-template-columns: 64px 28px 1fr; } .tagrow .chips { grid-column: 2 / -1; } .tagrow .status-lbl { text-align: left; } }
 .take { font: inherit; font-size: 14px; font-weight: 700; letter-spacing: -0.02em; height: 32px; padding: 0 14px; border-radius: 60px; border: 0; background: var(--bg); color: var(--fg); box-shadow: inset 0 0 0 1px var(--fg); cursor: pointer; white-space: nowrap; }
 .take[aria-pressed="true"] { background: var(--fg); color: var(--bg); }
 .take:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
@@ -247,20 +272,46 @@ summary:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
     <svg class="logo" width="62" height="48" viewBox="0 0 104 80" aria-label="aiEDU" role="img"><path class="plate" d="M104 30.2137C104 29.0174 103.715 27.6599 103.233 26.2232C102.628 24.4194 101.763 22.7134 100.718 21.1227L93.2305 8.03111C85.7835 -4.86901 67.6807 -1.18799 63.5462 11.6848L57.5993 1.38167L33.6417 1.44501L0 59.3235L12.2293 80.009H36.1451L45.6809 63.4998L55.1721 80.009H79.1168L91.048 59.3235L83.1059 45.5424C93.1901 48.8866 103.996 40.8882 103.999 30.2137H104ZM55.1678 5.61117L63.4972 20.0171H46.8628L38.5233 5.65148L55.1693 5.61261L55.1678 5.61117ZM33.6993 75.814L17.1282 75.8529L46.8772 24.225H63.4814L33.6993 75.814ZM86.1765 59.3235L76.6853 75.7867L60.0451 75.8126L69.5968 59.2832L58.7193 40.9199L67.1639 26.2793C71.6511 34.2273 81.5324 51.2417 86.1765 59.3235ZM77.9205 36.5695C69.7364 23.0417 89.8258 10.7059 98.1337 24.1746C105.755 37.4822 86.3492 49.4048 77.9205 36.5695Z"/><path class="teal" d="M77.9219 36.5672C69.7379 23.0395 89.8273 10.7036 98.1351 24.1724C105.756 37.4799 86.3507 49.4026 77.9219 36.5672Z"/><path class="teal" d="M86.176 59.3255L76.6848 75.7886L60.0446 75.8145L69.5963 59.2852L58.7188 40.9218L67.1634 26.2812C71.6505 34.2292 81.5319 51.2437 86.176 59.3255Z"/><path class="teal" d="M63.4988 20.0139H46.863L38.5234 5.64824L55.1694 5.60938L63.4988 20.0139Z"/><path class="teal" d="M63.4782 24.2266L33.6961 75.8156L17.125 75.8544L46.874 24.2266H63.4782Z"/></svg>
     <span class="eyebrow">Session 3 · Your AI workflow</span>
     <h1>Map your workflow</h1>
-    <p class="strap">List the steps of something you do and repeat, tag each one, and pick the one to work on. Everything you type stays in this browser tab; nothing is sent anywhere. One button copies your map so you can keep it.</p>
+    <p class="strap">List the steps, tag each one, pick one to work on. Everything you type stays in this browser tab; nothing is sent anywhere.</p>
   </header>
 
 
   <!-- 1 MAP -->
   <section class="screen" id="screen-map">
     <div class="substeps" role="group" aria-label="Map steps">
-      <button type="button" class="pillbtn xs" data-sub="list" aria-pressed="true">1 · List the steps</button>
+      <button type="button" class="pillbtn xs" data-sub="start" aria-pressed="true">Start here</button>
+      <button type="button" class="pillbtn xs" data-sub="list" aria-pressed="false">1 · List the steps</button>
       <button type="button" class="pillbtn xs" data-sub="tag" aria-pressed="false">2 · Tag the steps</button>
     </div>
 
+    <!-- 0 START HERE -->
+    <div id="sub-start" class="stack mid">
+      <p class="lead">Pick something you do and repeat: planning a lesson, giving feedback, reteaching, differentiating. Then make three moves.</p>
+
+      <div class="moves">
+        <div class="move"><span class="disc">1</span><div><h4>List the steps</h4><p>Every step, in the order it happens, including the ones that usually get skipped. Mark each one done or skipped.</p></div></div>
+        <div class="move"><span class="disc">2</span><div><h4>Tag each step</h4><p>One tag per step: what kind of help, if any, AI should give there.</p></div></div>
+        <div class="move"><span class="disc">3</span><div><h4>Pick one</h4><p>Flip the switch on one Faster, Better, or Possible step. That's the one you work on this week.</p></div></div>
+      </div>
+
+      <div class="tagkey">
+        <div class="keyitem"><span class="chip faster">⚡ Faster</span><span>I can do this fine. It just eats time. AI helps me do it faster.</span></div>
+        <div class="keyitem"><span class="chip better">💎 Better</span><span>Hard, and I know I'm not doing it justice. AI helps me do it better.</span></div>
+        <div class="keyitem"><span class="chip possible">👻 Possible</span><span>I skip this, and I shouldn't. AI makes it possible to actually do it.</span></div>
+        <div class="keyitem"><span class="chip mine">✋ Mine</span><span>Stays with me, with or without AI. Internalize the lesson, read the student's work, make the call.</span></div>
+        <p class="label" style="grid-column:1/-1">Adapted from Philippa Hardman's four kinds of help AI can offer. Mine is aiEDU's addition.</p>
+      </div>
+
+      <div class="footer-nav">
+        <span></span>
+        <span></span>
+        <button type="button" class="btn md" data-sub="list">Start mapping →</button>
+      </div>
+    </div>
+
     <!-- 1a -->
-    <div id="sub-list" class="stack">
-      <p class="lead">Map something you actually do and repeat: planning a lesson, differentiating, giving feedback, reteaching. List every step in order, including the ones that usually get skipped. Tags come next.</p>
+    <div id="sub-list" class="stack" hidden>
+      <p class="lead">List every step in order, including the ones that usually get skipped. Be honest about what gets skipped. That's usually a time problem, not a you problem.</p>
 
       <div class="card">
         <div class="between">
@@ -268,7 +319,7 @@ summary:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
           <button type="button" class="btn secondary" id="use-model">Start from this model</button>
         </div>
         <div class="tl-wrap" id="model-tl"></div>
-        <div class="tl-legend"><span>Done, most of the time</span><span class="g">Skipped for time or capacity</span></div>
+        <div class="tl-legend"><span>Done, most of the time</span><span class="g">Skipped, most of the time</span></div>
       </div>
 
       <div class="card shadow">
@@ -276,7 +327,7 @@ summary:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
           <h3>My workflow, in order</h3>
           <button type="button" class="btn" id="add-task">+ Add a step</button>
         </div>
-        <p class="muted">One line per step. Enter adds the next one. The second box is optional: what happens here.</p>
+        <p class="muted">One line per step. Enter adds the next one. The second box is optional: what happens here. Then mark the step done or skipped.</p>
         <div class="tasklist" id="tasklist"></div>
       </div>
 
@@ -289,22 +340,15 @@ summary:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
 
     <!-- 1b -->
     <div id="sub-tag" class="stack" hidden>
-      <p class="lead">Give every step a tag. Then flip the switch on the one Faster, Better, or Possible step you'll work on today.</p>
+      <p class="lead">Give every step a tag. Then flip the switch on the one Faster, Better, or Possible step you'll work on this week.</p>
 
-      <div class="tagkey">
-        <div class="keyitem"><span class="chip faster">⚡ Faster</span><span>Worth doing, takes too long. AI speeds it up without losing quality.</span></div>
+      <div class="tagkey compact">
+        <div class="keyitem"><span class="chip faster">⚡ Faster</span><span>I can do this fine. It just eats time. AI helps me do it faster.</span>
+          <details class="research"><summary>Before you pick Faster</summary><div>In the best study we have, AI's quality gain beat its speed gain: about 40% higher quality against 25% faster, on work inside what AI does well (Dell'Acqua et al., 2023). Real-world time savings for teachers are small, under 3% of working hours (Humlum and Vestergaard, 2025). And on work outside what AI does well, people were 19 points more likely to get it wrong. Pick the tag that's true for you, and keep your own judgment in the loop.</div></details>
+        </div>
         <div class="keyitem"><span class="chip better">💎 Better</span><span>Hard, and I know I'm not doing it justice. AI helps me do it better.</span></div>
-        <div class="keyitem"><span class="chip possible">👻 Possible</span><span>A step that gets skipped. I don't do this at all, and I should. AI makes it possible. It floats up off the line, still in its place.</span></div>
+        <div class="keyitem"><span class="chip possible">👻 Possible</span><span>I skip this, and I shouldn't. AI makes it possible to actually do it.</span></div>
         <div class="keyitem"><span class="chip mine">✋ Mine</span><span>Stays with me, with or without AI. Internalize the lesson, read the student's work, make the call.</span></div>
-        <p class="label" style="grid-column:1/-1">Adapted from Philippa Hardman's four kinds of help AI can offer. Mine is aiEDU's addition.</p>
-      </div>
-
-      <div class="privacy"><b>Before you pick Faster.</b> In the best study we have, AI's quality gain beat its speed gain: about 40% higher quality against 25% faster, on work inside what AI does well (Dell'Acqua et al., 2023). Real-world time savings for teachers are small, under 3% of working hours (Humlum and Vestergaard, 2025). And on work outside what AI does well, people were 19 points more likely to get it wrong. Pick the tag that's true for you, and keep your own judgment in the loop.</div>
-
-      <div class="card">
-        <h3>My workflow</h3>
-        <div class="tl-wrap" id="my-tl"></div>
-        <div class="tl-legend"><span>Done, most of the time</span><span class="g">Skipped for time or capacity</span></div>
       </div>
 
       <div class="card shadow">
@@ -312,7 +356,14 @@ summary:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
           <h3>Tag each step</h3>
           <button type="button" class="btn secondary" id="add-ghost">+ Add a step I skip</button>
         </div>
+        <p class="muted">Possible is only for steps you marked skipped. To change a step's status, go back to the list.</p>
         <div class="tasklist" id="taglist"></div>
+      </div>
+
+      <div class="card">
+        <h3 id="my-tl-title">My workflow</h3>
+        <div class="tl-wrap" id="my-tl"></div>
+        <div class="tl-legend"><span>Done, most of the time</span><span class="g">Skipped, most of the time</span></div>
       </div>
 
       <div class="card">
@@ -344,6 +395,15 @@ summary:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
   // ---------- content ----------
   var TAGS = { faster: '⚡ Faster', better: '💎 Better', possible: '👻 Possible', mine: '✋ Mine' };
   var TAG_ORDER = ['faster', 'better', 'possible', 'mine'];
+  // What the tag asks you to do. Shown under the tag on every mapped step and in the export.
+  var ACTIONS = {
+    faster: 'Use AI to speed this up. Same quality, less time.',
+    better: 'Use AI to raise the quality. You still decide what good looks like.',
+    possible: "Use AI to do this at all. It's been skipped, and it matters.",
+    mine: 'Keep this one with you. AI stays out, or stays in the background.'
+  };
+  var SKIP_LBL = 'Skipped, most of the time', DONE_LBL = 'Done, most of the time';
+  var POSSIBLE_LOCK = 'Only for steps you marked skipped.';
 
   // The model, in workflow order; skipped steps sit where they would happen.
   var MODEL = [
@@ -356,19 +416,27 @@ summary:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
   ];
 
   // ---------- state ----------
-  var KEY = 'aiedu-workflow-mapper-v1';
-  function fresh() { return { sub: 'list', tasks: [], chosen: null, seq: 1 }; }
+  var KEY = 'aiedu-workflow-mapper-v2';
+  function fresh() { return { sub: 'start', tasks: [], chosen: null, seq: 1 }; }
   var state = fresh();
-  try { var saved = JSON.parse(localStorage.getItem(KEY) || 'null'); if (saved && typeof saved === 'object' && saved.tasks) { state = Object.assign(fresh(), saved); } } catch (e) {}
+  try {
+    var saved = JSON.parse(localStorage.getItem(KEY) || 'null');
+    if (!saved) { // carry a v1 map forward: a Possible tag meant skipped
+      var old = JSON.parse(localStorage.getItem('aiedu-workflow-mapper-v1') || 'null');
+      if (old && old.tasks) { old.tasks.forEach(function (t) { t.skip = t.tag === 'possible'; }); saved = old; }
+    }
+    if (saved && typeof saved === 'object' && saved.tasks) { state = Object.assign(fresh(), saved); state.tasks.forEach(function (t) { t.skip = !!t.skip; }); }
+  } catch (e) {}
   function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
 
   function $(id) { return document.getElementById(id); }
   function el(tag, cls, text) { var n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; }
   function chosenTask() { for (var i = 0; i < state.tasks.length; i++) if (state.tasks[i].id === state.chosen) return state.tasks[i]; return null; }
   function applyTag() { var t = chosenTask(); if (t && t.tag && t.tag !== 'mine') document.documentElement.setAttribute('data-tag', t.tag); else document.documentElement.removeAttribute('data-tag'); }
-  // A skipped step is one tagged Possible: not done now, and AI could make it possible.
-  function isGhost(t) { return t.tag === 'possible'; }
-  function newTask(name, note, tag) { var t = { id: 't' + (state.seq++), name: name || '', note: note || '', tag: tag || null }; state.tasks.push(t); return t; }
+  // Status and tag are separate: skip is what happens today (marked in step 1); Possible is the decision that AI could change that (step 2, only on skipped steps).
+  function isGhost(t) { return !!t.skip; }
+  function newTask(name, note, tag, skip) { var t = { id: 't' + (state.seq++), name: name || '', note: note || '', tag: tag || null, skip: !!skip }; state.tasks.push(t); return t; }
+  function setSkip(t, skip) { t.skip = !!skip; if (!t.skip && t.tag === 'possible') { t.tag = null; if (state.chosen === t.id) state.chosen = null; } }
 
   // ---------- timeline ----------
   // One column per step in workflow order. Skipped steps float above their column with a dashed drop to a dot on the line.
@@ -382,10 +450,10 @@ summary:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
       var c = el('div', 'cell conn' + (gh ? ' has' : '')); c.style.gridColumn = col;
       var m = el('div', 'cell main-cell' + (i === tasks.length - 1 ? ' last' : '')); m.style.gridColumn = col;
       var box = el('div', 'box' + (gh ? ' ghost' : '') + (t.tag ? ' ' + t.tag : '') + (chosenId && t.id === chosenId ? ' chosen' : ''));
-      if (gh) box.appendChild(el('div', 'ghost-lbl', 'Skipped'));
       box.appendChild(el('div', 't', t.name || (gh ? '(unnamed step)' : 'Step ' + (i + 1))));
       if (t.note) box.appendChild(el('div', 'd', t.note));
-      if (t.tag) box.appendChild(el('div', 'd', TAGS[t.tag]));
+      if (t.tag) { box.appendChild(el('div', 'tag', TAGS[t.tag])); box.appendChild(el('div', 'act', ACTIONS[t.tag])); }
+      if (gh) box.appendChild(el('div', 'ghost-lbl', 'Skipped'));
       if (gh) { g.appendChild(box); m.appendChild(el('div', 'gap')); } else { m.appendChild(box); }
       tl.appendChild(g); tl.appendChild(c); tl.appendChild(m);
     });
@@ -404,6 +472,12 @@ summary:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
       var note = el('input', 'note'); note.type = 'text'; note.value = t.note; note.placeholder = 'what happens here (optional)'; note.setAttribute('aria-label', 'What happens in step ' + (i + 1));
       note.addEventListener('input', function () { t.note = note.value; save(); });
       row.appendChild(name); row.appendChild(note);
+      var seg = el('div', 'seg sm'); seg.setAttribute('role', 'group'); seg.setAttribute('aria-label', 'Step ' + (i + 1) + ' status');
+      var bd = el('button', 'done', DONE_LBL); bd.type = 'button'; bd.setAttribute('aria-pressed', String(!t.skip));
+      var bs = el('button', 'skip', SKIP_LBL); bs.type = 'button'; bs.setAttribute('aria-pressed', String(!!t.skip));
+      bd.addEventListener('click', function () { setSkip(t, false); save(); applyTag(); renderList(); });
+      bs.addEventListener('click', function () { setSkip(t, true); save(); renderList(); });
+      seg.appendChild(bd); seg.appendChild(bs); row.appendChild(seg);
       var ctl = el('div', 'ctl');
       var up = el('button', 'pillbtn', '↑'); up.type = 'button'; up.setAttribute('aria-label', 'Move up'); up.disabled = i === 0; up.addEventListener('click', function () { state.tasks.splice(i - 1, 0, state.tasks.splice(i, 1)[0]); save(); renderList(); });
       var dn = el('button', 'pillbtn', '↓'); dn.type = 'button'; dn.setAttribute('aria-label', 'Move down'); dn.disabled = i === state.tasks.length - 1; dn.addEventListener('click', function () { state.tasks.splice(i + 1, 0, state.tasks.splice(i, 1)[0]); save(); renderList(); });
@@ -422,30 +496,38 @@ summary:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
   }
   $('add-task').addEventListener('click', function () { newTask('', '', null); save(); renderList(); focusName(state.tasks.length - 1); });
   $('use-model').addEventListener('click', function () {
-    MODEL.forEach(function (m) { newTask(m.name, m.note, m.ghost ? 'possible' : null); });
-    save(); renderList(); toast('Model loaded. Rename, reorder, add, or remove steps to make it yours.');
+    MODEL.forEach(function (m) { newTask(m.name, m.note, null, m.ghost); });
+    save(); renderList(); toast('Model loaded. Rename, reorder, add, or remove steps, and mark what you actually skip.');
   });
   $('to-tag').addEventListener('click', function () { if ($('to-tag').disabled) return; setSub('tag'); });
 
   // ---------- 2: tag the steps ----------
+  function headline() { var t = chosenTask(); return t ? 'Work on this first: ' + (t.name || '(unnamed step)') : ''; }
   function renderTag() {
     renderTimeline($('my-tl'), state.tasks, state.chosen);
+    $('my-tl-title').textContent = headline() || 'My workflow';
     var list = $('taglist'); list.textContent = '';
     state.tasks.forEach(function (t, i) {
       var row = el('div', 'tagrow' + (isGhost(t) ? ' ghost' : '') + (state.chosen === t.id ? ' on' : ''));
       var sw = el('div', 'sw'); var swb = el('button'); swb.type = 'button'; swb.setAttribute('role', 'switch');
       var can = t.tag && t.tag !== 'mine'; swb.setAttribute('aria-checked', String(state.chosen === t.id)); swb.disabled = !can;
-      swb.setAttribute('aria-label', 'Work on this step'); swb.title = can ? 'Work on this one today' : 'Tag it Faster, Better, or Possible first';
+      swb.setAttribute('aria-label', 'Work on this step'); swb.title = can ? 'Work on this one this week' : 'Tag it Faster, Better, or Possible first';
       swb.addEventListener('click', function () { state.chosen = (state.chosen === t.id ? null : t.id); save(); applyTag(); renderTag(); });
       sw.appendChild(swb); sw.appendChild(el('span', 'lbl', state.chosen === t.id ? 'Working on' : 'Work on'));
       row.appendChild(sw);
       row.appendChild(el('span', 'disc', String(i + 1)));
       if (t.name.trim()) row.appendChild(el('span', 'name', t.name));
       else { var nm = el('input', 'name'); nm.type = 'text'; nm.placeholder = 'Name the step you skip'; nm.setAttribute('aria-label', 'Step name'); nm.addEventListener('input', function () { t.name = nm.value; save(); renderTimeline($('my-tl'), state.tasks, state.chosen); }); row.appendChild(nm); }
+      row.appendChild(el('span', 'status-lbl', isGhost(t) ? 'Skipped' : 'Done'));
       var chips = el('div', 'chips');
       TAG_ORDER.forEach(function (k) {
         var tb = el('button', 'tagchip ' + k, TAGS[k]); tb.type = 'button'; tb.setAttribute('aria-pressed', String(t.tag === k));
-        tb.addEventListener('click', function () { t.tag = (t.tag === k ? null : k); if (state.chosen === t.id && (t.tag === 'mine' || !t.tag)) state.chosen = null; save(); applyTag(); renderTag(); });
+        var locked = k === 'possible' && !isGhost(t);
+        if (locked) { tb.setAttribute('aria-disabled', 'true'); tb.title = POSSIBLE_LOCK; }
+        tb.addEventListener('click', function () {
+          if (locked) { toast(POSSIBLE_LOCK + ' Change the status in step 1.'); return; }
+          t.tag = (t.tag === k ? null : k); if (state.chosen === t.id && (t.tag === 'mine' || !t.tag)) state.chosen = null; save(); applyTag(); renderTag();
+        });
         chips.appendChild(tb);
       });
       row.appendChild(chips);
@@ -454,16 +536,16 @@ summary:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
     var untagged = state.tasks.filter(function (t) { return !t.tag; }).length;
     var why = $('map-why');
     if (untagged) why.textContent = untagged + (untagged === 1 ? ' step still needs a tag.' : ' steps still need a tag.');
-    else if (!state.chosen) why.textContent = 'Every step is tagged. Now flip the switch on the one Faster, Better, or Possible step you\'ll work on today. Mine stays yours.';
+    else if (!state.chosen) why.textContent = 'Every step is tagged. Now flip the switch on the one Faster, Better, or Possible step you\'ll work on this week. Mine stays yours.';
     else why.textContent = '';
   }
-  $('add-ghost').addEventListener('click', function () { newTask('', '', 'possible'); save(); renderTag(); var inputs = document.querySelectorAll('#taglist input.name'); if (inputs.length) inputs[inputs.length - 1].focus(); });
+  $('add-ghost').addEventListener('click', function () { newTask('', '', null, true); save(); renderTag(); var inputs = document.querySelectorAll('#taglist input.name'); if (inputs.length) inputs[inputs.length - 1].focus(); });
 
   function setSub(name) {
     state.sub = name; save();
-    $('sub-list').hidden = name !== 'list'; $('sub-tag').hidden = name !== 'tag';
+    $('sub-start').hidden = name !== 'start'; $('sub-list').hidden = name !== 'list'; $('sub-tag').hidden = name !== 'tag';
     Array.prototype.forEach.call(document.querySelectorAll('.substeps [data-sub]'), function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-sub') === name)); });
-    if (name === 'list') renderList(); else renderTag();
+    if (name === 'list') renderList(); else if (name === 'tag') renderTag();
     var top = document.querySelector('.substeps'); if (top && document.activeElement && document.activeElement.tagName === 'BUTTON') { try { top.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (e) {} }
   }
   Array.prototype.forEach.call(document.querySelectorAll('[data-sub]'), function (b) { b.addEventListener('click', function () { setSub(b.getAttribute('data-sub')); }); });
@@ -471,8 +553,12 @@ summary:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
   function notesText() {
     var t = chosenTask(); var L = [];
     L.push('MY WORKFLOW, IN ORDER');
-    state.tasks.forEach(function (x, i) { L.push((i + 1) + '. ' + (isGhost(x) ? 'SKIPPED: ' : '') + (x.name || '(unnamed)') + (x.note ? ' (' + x.note + ')' : '') + (x.tag ? ' · ' + TAGS[x.tag] : '')); });
-    L.push('Working on: ' + (t ? (t.name || '(unnamed)') + ' · ' + TAGS[t.tag] : '(none)'));
+    state.tasks.forEach(function (x, i) {
+      L.push((i + 1) + '. ' + (x.name || '(unnamed)') + (x.note ? ' (' + x.note + ')' : '') + (x.tag ? ' · ' + TAGS[x.tag] : '') + (isGhost(x) ? ' · skipped today' : ''));
+      if (x.tag) L.push('   ' + ACTIONS[x.tag]);
+    });
+    L.push('');
+    L.push(t ? headline() + ' · ' + TAGS[t.tag] : 'Work on this first: (not picked yet)');
     return L.join('\n');
   }
 
@@ -504,7 +590,7 @@ summary:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
     var navy = cssVar('--navy') || '#222244', grey = cssVar('--grey-label') || '#757575', lightGrey = cssVar('--light-grey') || '#f7f7f7', white = '#ffffff';
     var fills = { faster: cssVar('--teal-200'), better: cssVar('--blue-200'), possible: cssVar('--mandarin-200'), mine: lightGrey };
     var inks = { faster: cssVar('--teal-600'), better: cssVar('--blue-600'), possible: cssVar('--mandarin-600'), mine: navy };
-    var colW = 190, gap = 16, padX = 48, padTop = 96, ghostH = 104, mainH = 116, connH = 44, footH = 56;
+    var colW = 190, gap = 16, padX = 48, padTop = 96, ghostH = 150, mainH = 150, connH = 44, footH = 56;
     var n = Math.max(tasks.length, 1);
     var W = padX * 2 + n * colW + (n - 1) * gap, H = padTop + ghostH + connH + mainH + footH;
     var scale = 2, c = document.createElement('canvas'); c.width = W * scale; c.height = H * scale;
@@ -514,7 +600,7 @@ summary:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
     // title
     ctx.fillStyle = navy; ctx.font = '700 22px ' + font; ctx.textBaseline = 'top'; ctx.fillText('My workflow', padX, 28);
     ctx.font = '400 13px ' + font; ctx.fillStyle = grey;
-    ctx.fillText(t ? 'Working on: ' + (t.name || '(unnamed)') + '  ·  ' + TAGS[t.tag] : 'Tagged with Faster, Better, Possible, Mine', padX, 60);
+    ctx.fillText(t ? headline() + '  ·  ' + TAGS[t.tag] : 'Tagged with Faster, Better, Possible, Mine', padX, 60);
     var ghostTop = padTop, mainTop = padTop + ghostH + connH, lineY = mainTop + mainH / 2;
     // baseline
     ctx.strokeStyle = navy; ctx.lineWidth = 1; ctx.setLineDash([]); ctx.beginPath(); ctx.moveTo(padX, lineY); ctx.lineTo(W - padX, lineY); ctx.stroke();
@@ -529,17 +615,20 @@ summary:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
       ctx.fillStyle = (task.tag && fills[task.tag]) || white; ctx.fillRect(x, top, colW, h);
       ctx.strokeStyle = gh ? grey : navy; ctx.lineWidth = 1; ctx.setLineDash(gh ? [4, 3] : []); ctx.strokeRect(x + 0.5, top + 0.5, colW - 1, h - 1); ctx.setLineDash([]);
       var ty = top + 12;
-      if (gh) { ctx.fillStyle = grey; ctx.font = '700 10px ' + font; ctx.fillText('SKIPPED', x + 12, ty); ty += 16; }
       ctx.fillStyle = chosen ? (inks[task.tag] || navy) : navy; ctx.font = '700 14px ' + font;
-      wrapLines(ctx, task.name || 'Step ' + (i + 1), colW - 24).slice(0, 3).forEach(function (ln) { ctx.fillText(ln, x + 12, ty); ty += 17; });
+      wrapLines(ctx, task.name || 'Step ' + (i + 1), colW - 24).slice(0, 2).forEach(function (ln) { ctx.fillText(ln, x + 12, ty); ty += 17; });
       ctx.fillStyle = grey; ctx.font = '400 11px ' + font;
-      if (task.note) wrapLines(ctx, task.note, colW - 24).slice(0, 2).forEach(function (ln) { ctx.fillText(ln, x + 12, ty); ty += 14; });
-      if (task.tag) { ctx.fillStyle = navy; ctx.font = '500 11px ' + font; ctx.fillText(TAGS[task.tag], x + 12, ty); }
+      if (task.note) wrapLines(ctx, task.note, colW - 24).slice(0, 1).forEach(function (ln) { ctx.fillText(ln, x + 12, ty); ty += 14; });
+      if (task.tag) {
+        ty += 2; ctx.fillStyle = navy; ctx.font = '700 11px ' + font; ctx.fillText(TAGS[task.tag], x + 12, ty); ty += 15;
+        ctx.font = '400 11px ' + font; wrapLines(ctx, ACTIONS[task.tag], colW - 24).slice(0, 3).forEach(function (ln) { ctx.fillText(ln, x + 12, ty); ty += 14; });
+      }
+      if (gh) { ctx.fillStyle = grey; ctx.font = '500 11px ' + font; ctx.fillText('Skipped', x + 12, top + h - 22); }
     });
     // legend + credit
     var ly = H - footH + 16;
     ctx.strokeStyle = navy; ctx.setLineDash([]); ctx.strokeRect(padX + 0.5, ly + 0.5, 11, 11); ctx.fillStyle = grey; ctx.font = '400 11px ' + font; ctx.fillText('Done, most of the time', padX + 18, ly);
-    ctx.strokeStyle = grey; ctx.setLineDash([3, 2]); ctx.strokeRect(padX + 180.5, ly + 0.5, 11, 11); ctx.setLineDash([]); ctx.fillText('Skipped for time or capacity', padX + 198, ly);
+    ctx.strokeStyle = grey; ctx.setLineDash([3, 2]); ctx.strokeRect(padX + 180.5, ly + 0.5, 11, 11); ctx.setLineDash([]); ctx.fillText('Skipped, most of the time', padX + 198, ly);
     ctx.fillText("Tags adapted from Philippa Hardman's four kinds of help AI can offer. Mine is aiEDU's addition.", padX, ly + 20);
     return c;
   }
@@ -573,13 +662,13 @@ summary:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
   var resetArmed = false;
   $('reset').addEventListener('click', function () {
     if (!resetArmed) { resetArmed = true; $('reset').textContent = 'Click again to clear everything'; setTimeout(function () { resetArmed = false; $('reset').textContent = 'Start over'; }, 4000); return; }
-    state = fresh(); save(); try { localStorage.removeItem(KEY); } catch (e) {}
+    state = fresh(); save(); try { localStorage.removeItem(KEY); localStorage.removeItem('aiedu-workflow-mapper-v1'); } catch (e) {}
     applyTag(); setSub('list'); resetArmed = false; $('reset').textContent = 'Start over'; toast('Cleared');
   });
 
-  // boot
-  renderTimeline($('model-tl'), MODEL.map(function (m, i) { return { id: 'm' + i, name: m.name, note: m.note, tag: m.ghost ? 'possible' : null }; }), null);
-  applyTag(); setSub(state.sub || 'list');
+  // boot: Start here opens every time; the saved map is still there behind it.
+  renderTimeline($('model-tl'), MODEL.map(function (m, i) { return { id: 'm' + i, name: m.name, note: m.note, tag: null, skip: m.ghost }; }), null);
+  applyTag(); setSub('start');
 })();
 </script>
 
