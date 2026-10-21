@@ -151,10 +151,6 @@ input:focus-visible, textarea:focus-visible { outline: 3px solid var(--focus); o
 /* status (done / skipped) */
 .seg.sm button { font-size: 11px; height: 28px; padding: 0 10px; }
 .seg.sm button[aria-pressed="true"].skip { background: var(--ghost); border-color: var(--ghost); }
-.status-tog { font: inherit; font-size: 11px; font-weight: 700; letter-spacing: -0.02em; height: 22px; padding: 0 10px; border-radius: 60px; border: 0; background: var(--bg); color: var(--fg); box-shadow: inset 0 0 0 1px var(--fg); cursor: pointer; white-space: nowrap; transition: filter 120ms ease; }
-.status-tog.skip { background: var(--ghost); color: var(--white); box-shadow: inset 0 0 0 1px var(--ghost); }
-.status-tog:hover { filter: brightness(0.92); }
-.status-tog:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
 
 /* timeline */
 .tl-wrap { overflow-x: auto; padding: 12px 12px 12px 0; }
@@ -197,7 +193,7 @@ input:focus-visible, textarea:focus-visible { outline: 3px solid var(--focus); o
 .trow .ctl .pillbtn { height: 22px; padding: 0 8px; }
 @media (max-width: 900px) { .trow { grid-template-columns: 28px 1fr 1fr; } .trow .seg { grid-column: 2 / 3; } .trow .ctl { grid-column: 3; justify-content: flex-end; } }
 @media (max-width: 700px) { .trow { grid-template-columns: 28px 1fr; } .trow input, .trow .seg, .trow .ctl { grid-column: 2; } .trow .ctl { justify-content: flex-end; } }
-.tagrow { display: grid; grid-template-columns: 64px 28px minmax(120px, 1fr) auto auto; gap: 12px; align-items: center; background: var(--field-bg); border: 1px solid var(--rule); padding: 12px; }
+.tagrow { display: grid; grid-template-columns: 64px 28px minmax(120px, 1fr) auto; gap: 12px; align-items: center; background: var(--field-bg); border: 1px solid var(--rule); padding: 12px; }
 .tagchip[aria-disabled="true"] { opacity: .45; cursor: not-allowed; }
 .tagchip[aria-disabled="true"]:hover { filter: none; }
 .tagrow.on { background: var(--accent-soft); }
@@ -211,6 +207,8 @@ input:focus-visible, textarea:focus-visible { outline: 3px solid var(--focus); o
 .sw button:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
 .tagrow.ghost { border-style: dashed; border-color: var(--ghost); }
 .tagrow .name { font-weight: 700; overflow-wrap: anywhere; }
+.nameblock { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.skipcap { font-size: 11px; font-weight: 500; letter-spacing: 0.02em; color: var(--ghost); }
 .tagrow .ghosttoggle { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 500; white-space: nowrap; cursor: pointer; }
 .tagrow .ghosttoggle input { width: 16px; height: 16px; margin: 0; accent-color: var(--fg); }
 @media (max-width: 760px) { .tagrow { grid-template-columns: 64px 28px 1fr; } .tagrow .chips { grid-column: 2 / -1; } }
@@ -497,7 +495,7 @@ summary:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
     MODEL.forEach(function (m) { newTask(m.name, m.note, null, m.ghost); });
     save(); renderList(); toast('Model loaded. Rename, reorder, add, or remove steps, and mark what you actually skip.');
   });
-  $('to-tag').addEventListener('click', function () { if ($('to-tag').disabled) return; setSub('tag'); });
+  $('to-tag').addEventListener('click', function () { if ($('to-tag').disabled) return; state.tasks = state.tasks.filter(function (t) { return t.name.trim(); }); if (!chosenTask()) state.chosen = null; save(); setSub('tag'); });
 
   // ---------- 2: tag the steps ----------
   function headline() { var t = chosenTask(); return t ? 'Work on this first: ' + (t.name || '(unnamed step)') : ''; }
@@ -514,20 +512,14 @@ summary:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
       sw.appendChild(swb); sw.appendChild(el('span', 'lbl', state.chosen === t.id ? 'Working on' : 'Work on'));
       row.appendChild(sw);
       row.appendChild(el('span', 'disc', String(i + 1)));
-      if (t.name.trim()) row.appendChild(el('span', 'name', t.name));
-      else { var nm = el('input', 'name'); nm.type = 'text'; nm.placeholder = 'Step ' + (i + 1); nm.setAttribute('aria-label', 'Step ' + (i + 1) + ' name'); nm.addEventListener('input', function () { t.name = nm.value; save(); renderTimeline($('my-tl'), state.tasks, state.chosen); }); row.appendChild(nm); }
-      // Status toggle: flip a step to skipped here and Possible unlocks on the spot.
-      var st = el('button', 'status-tog' + (isGhost(t) ? ' skip' : ''), isGhost(t) ? 'Skipped' : 'Done'); st.type = 'button';
-      st.setAttribute('aria-pressed', String(isGhost(t))); st.title = isGhost(t) ? 'Marked skipped. Click to mark done.' : 'Marked done. Click to mark skipped.';
-      st.addEventListener('click', function () { setSkip(t, !isGhost(t)); save(); applyTag(); renderTag(); });
-      row.appendChild(st);
+      var nb = el('div', 'nameblock'); nb.appendChild(el('span', 'name', t.name)); if (isGhost(t)) nb.appendChild(el('span', 'skipcap', SKIP_LBL)); row.appendChild(nb);
       var chips = el('div', 'chips');
       TAG_ORDER.forEach(function (k) {
         var tb = el('button', 'tagchip ' + k, TAGS[k]); tb.type = 'button'; tb.setAttribute('aria-pressed', String(t.tag === k));
         var locked = k === 'possible' && !isGhost(t);
         if (locked) { tb.setAttribute('aria-disabled', 'true'); tb.title = POSSIBLE_LOCK; }
         tb.addEventListener('click', function () {
-          if (locked) { toast('Mark this step skipped first. Click "Done" on this row to flip it.'); return; }
+          if (locked) { toast('Possible is for steps you skip. This one is marked done. Change that in step 1 if it isn\'t right.'); return; }
           t.tag = (t.tag === k ? null : k); if (state.chosen === t.id && (t.tag === 'mine' || !t.tag)) state.chosen = null; save(); applyTag(); renderTag();
         });
         chips.appendChild(tb);
