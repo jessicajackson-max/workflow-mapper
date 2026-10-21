@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="aiEDU workflow mapper: list the steps of something you do and repeat, tag each one, and pick the one to work on.">
+<title>Workflow Mapper</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700;800&display=swap">
+<style>
+/* Layout: one column, max 1040px, two passes: list the steps, then tag them on a timeline where skipped steps float above the line. aiEDU system: Poppins on the 34/22/18/14/11 rungs, square boxes with 1px navy rules, hard offset shadow in the accent 500, Teal 400 primary action with a navy label, 200-step taxonomy chips with navy labels, pills for furniture. */
+:root {
+  --navy: #222244; --white: #ffffff; --light-grey: #f7f7f7; --grey-caption: #393939; --grey-label: #757575; --grey-ring: #c9cbd4; --grey-body-inverted: #e8e9ee;
+  --teal-100: #f2ffff; --teal-200: #d9faf9; --teal-300: #a1f0ee; --teal-400: #00d9d3; --teal-500: #02a39f; --teal-600: #006e6a;
+  --blue-100: #f5f9ff; --blue-200: #eaf1fc; --blue-300: #c7dafc; --blue-400: #619bff; --blue-500: #307dff; --blue-600: #264cbd; --blue-700: #28357a;
+  --mandarin-100: #fff5f2; --mandarin-200: #ffebe5; --mandarin-300: #ffcaba; --mandarin-400: #ff7247; --mandarin-500: #e84b1a; --mandarin-600: #a12f0d;
+
+  --bg: var(--white);
+  --fg: var(--navy);
+  --muted: var(--grey-caption);
+  --label: var(--grey-label);
+  --card: var(--light-grey);
+  --field-bg: var(--white);
+  --field-border: var(--grey-ring);
+  --rule: var(--navy);
+  --eyebrow: var(--teal-500);
+  --accent: var(--teal-500);
+  --accent-ink: var(--teal-600);
+  --accent-soft: var(--teal-100);
+  --accent-chip: var(--teal-200);
+  --primary: var(--teal-400);
+  --primary-fg: var(--navy);
+  --btn-sh: var(--navy);
+  --focus: var(--blue-500);
+  --ghost: var(--grey-label);
+  --logo-plate: var(--navy);
+  --chosen-ink: var(--accent-ink);
+  --tag-faster: var(--teal-500); --tag-better: var(--blue-500); --tag-possible: var(--mandarin-500);
+  --tag-faster-chip: var(--teal-200); --tag-better-chip: var(--blue-200); --tag-possible-chip: var(--mandarin-200); --tag-mine-chip: var(--light-grey);
+  --tag-faster-ink: var(--teal-600); --tag-better-ink: var(--blue-600); --tag-possible-ink: var(--mandarin-600);
+  --font: "Poppins", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+/* Single-theme: the page keeps a white ground in every viewer setting, per the one-ground-per-canvas rule. */
+:root { color-scheme: light; }
+:root[data-tag="faster"] { --accent: var(--tag-faster); --accent-chip: var(--tag-faster-chip); --accent-ink: var(--tag-faster-ink); }
+:root[data-tag="better"] { --accent: var(--tag-better); --accent-chip: var(--tag-better-chip); --accent-ink: var(--tag-better-ink); }
+:root[data-tag="possible"] { --accent: var(--tag-possible); --accent-chip: var(--tag-possible-chip); --accent-ink: var(--tag-possible-ink); }
+
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--font); font-size: 14px; line-height: 1.3; letter-spacing: -0.02em; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+h1, h2, h3, h4 { margin: 0; line-height: 1.15; letter-spacing: -0.02em; text-wrap: balance; }
+h1 { font-size: 34px; font-weight: 700; }
+h2 { font-size: 22px; font-weight: 700; }
+h3 { font-size: 18px; font-weight: 700; }
+h4 { font-size: 14px; font-weight: 700; }
+p { margin: 0; }
+.eyebrow { font-size: 11px; font-weight: 700; letter-spacing: 0.13em; text-transform: uppercase; color: var(--eyebrow); }
+.muted { color: var(--muted); }
+.label { font-size: 11px; font-weight: 500; line-height: 1.4; color: var(--label); }
+.small { font-size: 11px; line-height: 1.4; }
+
+.wrap { max-width: 1040px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 0 56px; }
+header.top { display: flex; flex-direction: column; gap: 12px; padding-block: 36px 24px; }
+header.top .logo { margin-bottom: 12px; }
+.logo .plate { fill: var(--logo-plate); } .logo .teal { fill: var(--teal-400); }
+header.top h1 { max-width: 24ch; }
+.strap { font-size: 14px; color: var(--muted); max-width: 64ch; }
+
+section.screen { display: flex; flex-direction: column; gap: 36px; padding-block: 36px 0; }
+.lead { font-size: 18px; line-height: 1.3; max-width: 60ch; }
+.lead strong { font-weight: 700; }
+
+.card { background: var(--card); padding: 36px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+@media (max-width: 700px) { .card { padding: 24px; } }
+.card.shadow { box-shadow: 10px 10px 0 0 var(--accent); margin-right: 10px; margin-bottom: 10px; }
+.card.tint { background: var(--accent-soft); }
+.card > h3 { color: var(--accent); font-size: 22px; }
+.row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+.between { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 36px; }
+@media (max-width: 760px) { .grid2 { grid-template-columns: 1fr; } }
+.stack { display: flex; flex-direction: column; gap: 36px; min-width: 0; }
+.stack.tight { gap: 12px; }
+
+.field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.field label { font-weight: 700; font-size: 14px; }
+.field .hint { font-size: 14px; color: var(--muted); }
+input[type="text"], textarea { font: inherit; font-size: 14px; letter-spacing: -0.02em; color: var(--fg); background: var(--field-bg); border: 1px solid var(--field-border); padding: 10px 12px; width: 100%; min-width: 0; border-radius: 0; }
+textarea { min-height: 110px; resize: vertical; line-height: 1.4; }
+textarea.tall { min-height: 170px; }
+input:focus-visible, textarea:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; border-color: var(--fg); }
+
+/* buttons: actions get 6px radius and a hard shadow; furniture is a pill with no shadow */
+.btn { font: inherit; font-weight: 700; font-size: 14px; letter-spacing: -0.02em; border: 0; border-radius: 6px; height: 36px; padding: 0 16px; cursor: pointer; background: var(--primary); color: var(--primary-fg); box-shadow: 4px 4px 0 0 var(--btn-sh); transition: box-shadow 320ms cubic-bezier(.16,.84,.24,1), filter 120ms ease; display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; }
+.btn.md { height: 44px; padding: 0 20px; font-size: 18px; box-shadow: 6px 6px 0 0 var(--btn-sh); }
+.btn:hover { box-shadow: 6px 6px 0 0 var(--btn-sh); filter: brightness(0.92); }
+.btn.md:hover { box-shadow: 8px 8px 0 0 var(--btn-sh); }
+.btn:active { box-shadow: 0 0 0 0 var(--btn-sh); filter: brightness(0.86); }
+.btn:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
+.btn.secondary { background: var(--bg); color: var(--fg); box-shadow: inset 0 0 0 1px var(--fg), 4px 4px 0 0 var(--btn-sh); }
+.btn.secondary:hover { box-shadow: inset 0 0 0 1px var(--fg), 6px 6px 0 0 var(--btn-sh); }
+.btn.secondary:active { box-shadow: inset 0 0 0 1px var(--fg), 0 0 0 0 var(--btn-sh); }
+.btn[disabled] { opacity: .5; cursor: not-allowed; box-shadow: none; filter: none; }
+.pillbtn { font: inherit; font-size: 11px; font-weight: 700; letter-spacing: -0.02em; height: 22px; padding: 0 10px; border-radius: 60px; border: 0; background: var(--bg); color: var(--fg); box-shadow: inset 0 0 0 1px var(--fg); cursor: pointer; transition: filter 120ms ease; white-space: nowrap; }
+.pillbtn.xs { height: 32px; font-size: 14px; padding: 0 14px; }
+.pillbtn:hover { filter: brightness(0.92); background: var(--card); }
+.pillbtn:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
+.pillbtn[aria-pressed="true"] { background: var(--fg); color: var(--bg); }
+.link { font: inherit; font-size: 11px; font-weight: 500; letter-spacing: -0.02em; background: none; border: 0; color: var(--label); cursor: pointer; padding: 4px 2px; text-decoration: underline; }
+.link:hover { color: var(--fg); }
+.link:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.footer-nav { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; align-items: center; }
+.footer-nav .why { font-size: 14px; color: var(--muted); flex: 1 1 100%; }
+
+/* taxonomy chips: 200-step tint, navy label, colour fixed per tag */
+.tagchip { font: inherit; font-size: 11px; font-weight: 700; letter-spacing: -0.02em; height: 22px; padding: 0 10px; border-radius: 60px; border: 0; background: var(--bg); color: var(--fg); box-shadow: inset 0 0 0 1px var(--field-border); cursor: pointer; white-space: nowrap; transition: filter 120ms ease; }
+.tagchip:hover { filter: brightness(0.92); }
+.tagchip:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
+.tagchip[aria-pressed="true"] { box-shadow: inset 0 0 0 1px var(--fg); }
+.tagchip[aria-pressed="true"]::before { content: "✓ "; }
+.tagchip.faster[aria-pressed="true"], .chip.faster { background: var(--tag-faster-chip); }
+.tagchip.better[aria-pressed="true"], .chip.better { background: var(--tag-better-chip); }
+.tagchip.possible[aria-pressed="true"], .chip.possible { background: var(--tag-possible-chip); }
+.tagchip.mine[aria-pressed="true"], .chip.mine { background: var(--tag-mine-chip); }
+.chip { display: inline-block; font-size: 11px; font-weight: 700; height: 22px; line-height: 22px; padding: 0 10px; border-radius: 60px; box-shadow: inset 0 0 0 1px var(--fg); color: var(--fg); white-space: nowrap; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+
+/* map sub-steps */
+.substeps { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+.substeps .pillbtn.xs[aria-pressed="true"] { background: var(--fg); color: var(--bg); }
+
+/* tag key */
+.tagkey { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px 24px; background: var(--card); padding: 24px; }
+.keyitem { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; font-size: 14px; line-height: 1.3; }
+.keyitem .chip { flex: 0 0 auto; }
+
+/* timeline */
+.tl-wrap { overflow-x: auto; padding: 12px 12px 12px 0; }
+.tl { display: grid; grid-template-rows: auto 36px auto; column-gap: 12px; align-items: stretch; width: 100%; }
+.tl .cell { min-width: 0; }
+.tl .ghost-cell { grid-row: 1; align-self: end; }
+.tl .main-cell { display: flex; }
+.tl .main-cell .box { flex: 1 1 auto; }
+.tl .conn { grid-row: 2; position: relative; }
+.tl .conn.has::before { content: ""; position: absolute; left: 50%; top: 0; bottom: 0; border-left: 1px dashed var(--ghost); }
+.tl .conn.has::after { content: ""; position: absolute; left: 50%; bottom: -5px; width: 10px; height: 10px; margin-left: -5px; border-radius: 50%; background: var(--fg); }
+.tl .main-cell { grid-row: 3; position: relative; }
+.tl .main-cell::before { content: ""; position: absolute; left: -12px; right: -12px; top: 50%; border-top: 1px solid var(--rule); z-index: 0; }
+.tl .main-cell:first-of-type::before { left: 0; }
+.tl .main-cell.last::before { right: 0; }
+.tl .box { position: relative; z-index: 1; background: var(--field-bg); border: 1px solid var(--rule); padding: 12px; display: flex; flex-direction: column; gap: 4px; min-height: 72px; }
+.tl .box .t { font-size: 14px; font-weight: 700; overflow-wrap: anywhere; }
+.tl .box .d { font-size: 11px; line-height: 1.4; color: var(--muted); overflow-wrap: anywhere; }
+.tl .box .ghost-lbl { font-size: 11px; font-weight: 700; letter-spacing: 0.13em; text-transform: uppercase; color: var(--ghost); }
+.tl .box.ghost { border-style: dashed; border-color: var(--ghost); }
+.tl .box.faster { background: var(--tag-faster-chip); } .tl .box.better { background: var(--tag-better-chip); } .tl .box.possible { background: var(--tag-possible-chip); } .tl .box.mine { background: var(--tag-mine-chip); }
+.tl .box.chosen { box-shadow: 10px 10px 0 0 var(--accent-ink); }
+.tl .box.chosen .t { color: var(--chosen-ink); }
+.tl .gap { flex: 1 1 auto; min-height: 72px; }
+.tl-legend { display: flex; gap: 24px; flex-wrap: wrap; font-size: 11px; line-height: 1.4; color: var(--muted); }
+.tl-legend span::before { content: ""; display: inline-block; width: 12px; height: 12px; border: 1px solid var(--rule); margin-right: 6px; vertical-align: -2px; }
+.tl-legend span.g::before { border-style: dashed; border-color: var(--ghost); }
+
+/* task list editor */
+.tasklist { display: flex; flex-direction: column; gap: 12px; }
+.trow { display: grid; grid-template-columns: 28px 1fr 1fr auto; gap: 12px; align-items: center; background: var(--field-bg); border: 1px solid var(--rule); padding: 12px; }
+.trow.ghost { border-style: dashed; border-color: var(--ghost); }
+.trow .disc { width: 24px; height: 24px; border-radius: 50%; background: var(--fg); color: var(--bg); font-size: 11px; font-weight: 700; display: grid; place-items: center; }
+.trow.ghost .disc { background: var(--ghost); color: var(--white); }
+.trow input[type="text"] { border-width: 0 0 1px 0; padding: 6px 4px; background: transparent; }
+.trow input.name { font-weight: 700; }
+.trow .ctl { display: flex; gap: 4px; align-items: center; }
+.trow .ctl .pillbtn { height: 22px; padding: 0 8px; }
+@media (max-width: 700px) { .trow { grid-template-columns: 28px 1fr; } .trow .ctl { grid-column: 2; } }
+.tagrow { display: grid; grid-template-columns: 64px 28px minmax(120px, 1fr) auto; gap: 12px; align-items: center; background: var(--field-bg); border: 1px solid var(--rule); padding: 12px; }
+.tagrow.on { background: var(--accent-soft); }
+.sw { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.sw .lbl { font-size: 11px; font-weight: 500; line-height: 1.4; color: var(--label); white-space: nowrap; }
+.sw button { width: 40px; height: 22px; border-radius: 60px; border: 0; padding: 0; background: var(--grey-ring); position: relative; cursor: pointer; transition: background 120ms ease; }
+.sw button::after { content: ""; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: var(--white); transition: left 120ms ease; }
+.sw button[aria-checked="true"] { background: var(--accent); }
+.sw button[aria-checked="true"]::after { left: 21px; }
+.sw button[disabled] { opacity: .4; cursor: not-allowed; }
+.sw button:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
+.tagrow.ghost { border-style: dashed; border-color: var(--ghost); }
+.tagrow .name { font-weight: 700; overflow-wrap: anywhere; }
+.tagrow .ghosttoggle { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 500; white-space: nowrap; cursor: pointer; }
+.tagrow .ghosttoggle input { width: 16px; height: 16px; margin: 0; accent-color: var(--fg); }
+@media (max-width: 760px) { .tagrow { grid-template-columns: 64px 28px 1fr; } .tagrow .chips { grid-column: 2 / -1; } }
+.take { font: inherit; font-size: 14px; font-weight: 700; letter-spacing: -0.02em; height: 32px; padding: 0 14px; border-radius: 60px; border: 0; background: var(--bg); color: var(--fg); box-shadow: inset 0 0 0 1px var(--fg); cursor: pointer; white-space: nowrap; }
+.take[aria-pressed="true"] { background: var(--fg); color: var(--bg); }
+.take:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
+.empty { border: 1px dashed var(--field-border); padding: 24px; color: var(--muted); font-size: 14px; text-align: center; }
+
+.chosen-strip { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; font-weight: 700; }
+.privacy { border-left: 4px solid var(--accent); padding: 12px 24px; background: var(--card); font-size: 14px; }
+
+/* library */
+.finder { background: var(--card); padding: 24px; display: flex; flex-direction: column; gap: 12px; }
+.finder-row { display: flex; flex-direction: column; gap: 6px; }
+.finder .hintline { font-size: 14px; color: var(--muted); }
+.lib { display: flex; flex-direction: column; gap: 12px; }
+.lib.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+.lib.grid .tile { height: 100%; }
+.tile { font: inherit; letter-spacing: -0.02em; text-align: left; background: var(--field-bg); border: 1px solid var(--field-border); color: var(--fg); padding: 12px 16px; cursor: pointer; display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: start; width: 100%; transition: filter 120ms ease; }
+.tile:hover { filter: brightness(0.96); }
+.tile:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
+.tile[aria-pressed="true"] { border-color: var(--accent-ink); box-shadow: 6px 6px 0 0 var(--accent-ink); background: var(--accent-soft); }
+.tile .cat { font-size: 11px; font-weight: 700; letter-spacing: 0.13em; text-transform: uppercase; color: var(--accent-ink); }
+.tile .asks { font-size: 11px; line-height: 1.4; color: var(--muted); margin-top: 2px; }
+.tile .arrow { font-size: 18px; line-height: 1; color: var(--accent-ink); align-self: center; }
+.viewer-empty { border: 1px dashed var(--field-border); padding: 36px 24px; color: var(--muted); text-align: center; font-size: 14px; }
+#viewer .cat { font-size: 11px; font-weight: 700; letter-spacing: 0.13em; text-transform: uppercase; color: var(--accent-ink); }
+#viewer .asks { font-size: 14px; color: var(--muted); }
+.prompt-box { background: var(--field-bg); border: 1px solid var(--rule); padding: 12px 16px; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 14px; line-height: 1.4; min-width: 0; }
+details { border-top: 1px solid var(--field-border); padding-top: 8px; }
+details summary { cursor: pointer; font-weight: 700; font-size: 11px; letter-spacing: 0.13em; text-transform: uppercase; color: var(--accent-ink); list-style: none; display: flex; align-items: center; gap: 8px; }
+details summary::-webkit-details-marker { display: none; }
+details summary::before { content: "+"; font-size: 14px; width: 12px; display: inline-block; }
+details[open] summary::before { content: "–"; }
+details > div { padding-top: 8px; display: flex; flex-direction: column; gap: 8px; font-size: 14px; }
+summary:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
+.qs { display: flex; flex-direction: column; gap: 12px; }
+.check { display: grid; grid-template-columns: 26px 1fr; gap: 12px; align-items: start; background: var(--field-bg); border: 1px solid var(--field-border); padding: 12px 16px; }
+.check input { width: 20px; height: 20px; margin: 1px 0 0; accent-color: var(--accent); }
+.check label { cursor: pointer; }
+.check label b { display: block; }
+.sticky-col { position: sticky; top: 72px; align-self: start; }
+@media (max-width: 760px) { .sticky-col { position: static; } }
+
+.seg { display: flex; flex-wrap: wrap; }
+.seg button { font: inherit; font-weight: 700; font-size: 14px; letter-spacing: -0.02em; height: 36px; padding: 0 16px; background: var(--field-bg); color: var(--fg); border: 1px solid var(--fg); cursor: pointer; margin-right: -1px; transition: filter 120ms ease; }
+.seg button:hover { filter: brightness(0.92); }
+.seg button:first-child { border-radius: 6px 0 0 6px; } .seg button:last-child { border-radius: 0 6px 6px 0; margin-right: 0; }
+.seg button[aria-pressed="true"] { background: var(--fg); color: var(--bg); position: relative; z-index: 1; }
+.seg button:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; z-index: 2; }
+.toast { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--navy); color: var(--white); padding: 10px 16px; font-weight: 700; font-size: 14px; border-radius: 6px; box-shadow: 4px 4px 0 0 var(--teal-400); opacity: 0; pointer-events: none; transition: opacity 120ms ease; z-index: 20; max-width: calc(100vw - 32px); }
+.toast.show { opacity: 1; }
+@media (prefers-reduced-motion: reduce) { * { transition-duration: 1ms !important; } }
+</style>
+<style>html,body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="top">
+    <svg class="logo" width="62" height="48" viewBox="0 0 104 80" aria-label="aiEDU" role="img"><path class="plate" d="M104 30.2137C104 29.0174 103.715 27.6599 103.233 26.2232C102.628 24.4194 101.763 22.7134 100.718 21.1227L93.2305 8.03111C85.7835 -4.86901 67.6807 -1.18799 63.5462 11.6848L57.5993 1.38167L33.6417 1.44501L0 59.3235L12.2293 80.009H36.1451L45.6809 63.4998L55.1721 80.009H79.1168L91.048 59.3235L83.1059 45.5424C93.1901 48.8866 103.996 40.8882 103.999 30.2137H104ZM55.1678 5.61117L63.4972 20.0171H46.8628L38.5233 5.65148L55.1693 5.61261L55.1678 5.61117ZM33.6993 75.814L17.1282 75.8529L46.8772 24.225H63.4814L33.6993 75.814ZM86.1765 59.3235L76.6853 75.7867L60.0451 75.8126L69.5968 59.2832L58.7193 40.9199L67.1639 26.2793C71.6511 34.2273 81.5324 51.2417 86.1765 59.3235ZM77.9205 36.5695C69.7364 23.0417 89.8258 10.7059 98.1337 24.1746C105.755 37.4822 86.3492 49.4048 77.9205 36.5695Z"/><path class="teal" d="M77.9219 36.5672C69.7379 23.0395 89.8273 10.7036 98.1351 24.1724C105.756 37.4799 86.3507 49.4026 77.9219 36.5672Z"/><path class="teal" d="M86.176 59.3255L76.6848 75.7886L60.0446 75.8145L69.5963 59.2852L58.7188 40.9218L67.1634 26.2812C71.6505 34.2292 81.5319 51.2437 86.176 59.3255Z"/><path class="teal" d="M63.4988 20.0139H46.863L38.5234 5.64824L55.1694 5.60938L63.4988 20.0139Z"/><path class="teal" d="M63.4782 24.2266L33.6961 75.8156L17.125 75.8544L46.874 24.2266H63.4782Z"/></svg>
+    <span class="eyebrow">Session 3 · Your AI workflow</span>
+    <h1>Map your workflow</h1>
+    <p class="strap">List the steps of something you do and repeat, tag each one, and pick the one to work on. Everything you type stays in this browser tab; nothing is sent anywhere. One button copies your map so you can keep it.</p>
+  </header>
+
+
+  <!-- 1 MAP -->
+  <section class="screen" id="screen-map">
+    <div class="substeps" role="group" aria-label="Map steps">
+      <button type="button" class="pillbtn xs" data-sub="list" aria-pressed="true">1 · List the steps</button>
+      <button type="button" class="pillbtn xs" data-sub="tag" aria-pressed="false">2 · Tag the steps</button>
+    </div>
+
+    <!-- 1a -->
+    <div id="sub-list" class="stack">
+      <p class="lead">Map something you actually do and repeat: planning a lesson, differentiating, giving feedback, reteaching. List every step in order, including the ones that usually get skipped. Tags come next.</p>
+
+      <div class="card">
+        <div class="between">
+          <h3>A lesson planning workflow (the model)</h3>
+          <button type="button" class="btn secondary" id="use-model">Start from this model</button>
+        </div>
+        <div class="tl-wrap" id="model-tl"></div>
+        <div class="tl-legend"><span>Done, most of the time</span><span class="g">Skipped for time or capacity</span></div>
+      </div>
+
+      <div class="card shadow">
+        <div class="between">
+          <h3>My workflow, in order</h3>
+          <button type="button" class="btn" id="add-task">+ Add a step</button>
+        </div>
+        <p class="muted">One line per step. Enter adds the next one. The second box is optional: what happens here.</p>
+        <div class="tasklist" id="tasklist"></div>
+      </div>
+
+      <div class="footer-nav">
+        <span class="why" id="list-why"></span>
+        <span></span>
+        <button type="button" class="btn md" id="to-tag">Next: tag the steps →</button>
+      </div>
+    </div>
+
+    <!-- 1b -->
+    <div id="sub-tag" class="stack" hidden>
+      <p class="lead">Give every step a tag. Then flip the switch on the one Faster, Better, or Possible step you'll work on today.</p>
+
+      <div class="tagkey">
+        <div class="keyitem"><span class="chip faster">⚡ Faster</span><span>Worth doing, takes too long. AI speeds it up without losing quality.</span></div>
+        <div class="keyitem"><span class="chip better">💎 Better</span><span>Hard, and I know I'm not doing it justice. AI helps me do it better.</span></div>
+        <div class="keyitem"><span class="chip possible">👻 Possible</span><span>A step that gets skipped. I don't do this at all, and I should. AI makes it possible. It floats up off the line, still in its place.</span></div>
+        <div class="keyitem"><span class="chip mine">✋ Mine</span><span>Stays with me, with or without AI. Internalize the lesson, read the student's work, make the call.</span></div>
+        <p class="label" style="grid-column:1/-1">Adapted from Philippa Hardman's four kinds of help AI can offer. Mine is aiEDU's addition.</p>
+      </div>
+
+      <div class="privacy"><b>Before you pick Faster.</b> In the best study we have, AI's quality gain beat its speed gain: about 40% higher quality against 25% faster, on work inside what AI does well (Dell'Acqua et al., 2023). Real-world time savings for teachers are small, under 3% of working hours (Humlum and Vestergaard, 2025). And on work outside what AI does well, people were 19 points more likely to get it wrong. Pick the tag that's true for you, and keep your own judgment in the loop.</div>
+
+      <div class="card">
+        <h3>My workflow</h3>
+        <div class="tl-wrap" id="my-tl"></div>
+        <div class="tl-legend"><span>Done, most of the time</span><span class="g">Skipped for time or capacity</span></div>
+      </div>
+
+      <div class="card shadow">
+        <div class="between">
+          <h3>Tag each step</h3>
+          <button type="button" class="btn secondary" id="add-ghost">+ Add a step I skip</button>
+        </div>
+        <div class="tasklist" id="taglist"></div>
+      </div>
+
+      <div class="card">
+        <h3>Keep your map</h3>
+        <p>This tab remembers your map while it's open, but it isn't your doc. Copy it as an image and paste it into a slide or doc, or download it.</p>
+        <div class="row">
+          <button type="button" class="btn md" id="copy-img">Copy as image</button>
+          <button type="button" class="btn secondary" id="dl-img">Download image</button>
+          <button type="button" class="btn secondary" id="copy-all">Copy as text</button>
+          <button type="button" class="btn secondary" id="reset">Start over</button>
+        </div>
+      </div>
+      <div class="footer-nav">
+        <span class="why" id="map-why"></span>
+        <button type="button" class="btn secondary" data-sub="list">← Back to the list</button>
+        <span></span>
+      </div>
+    </div>
+  </section>
+
+  <p class="label" style="padding-top:36px">Tags adapted from Philippa Hardman's four kinds of help AI can offer. Mine is aiEDU's addition.</p>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  // ---------- content ----------
+  var TAGS = { faster: '⚡ Faster', better: '💎 Better', possible: '👻 Possible', mine: '✋ Mine' };
+  var TAG_ORDER = ['faster', 'better', 'possible', 'mine'];
+
+  // The model, in workflow order; skipped steps sit where they would happen.
+  var MODEL = [
+    { name: 'Write objectives', note: 'clarify the learning goal', ghost: false },
+    { name: 'Select and sequence content', note: 'decide what, and in what order', ghost: false },
+    { name: 'Anticipate student misconceptions', note: '', ghost: true },
+    { name: 'Design activities', note: 'what students will do', ghost: false },
+    { name: 'Differentiate for learners', note: '', ghost: true },
+    { name: 'Write lesson plan / agenda', note: 'put it on paper', ghost: false }
+  ];
+
+  // ---------- state ----------
+  var KEY = 'aiedu-workflow-mapper-v1';
+  function fresh() { return { sub: 'list', tasks: [], chosen: null, seq: 1 }; }
+  var state = fresh();
+  try { var saved = JSON.parse(localStorage.getItem(KEY) || 'null'); if (saved && typeof saved === 'object' && saved.tasks) { state = Object.assign(fresh(), saved); } } catch (e) {}
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
+
+  function $(id) { return document.getElementById(id); }
+  function el(tag, cls, text) { var n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; }
+  function chosenTask() { for (var i = 0; i < state.tasks.length; i++) if (state.tasks[i].id === state.chosen) return state.tasks[i]; return null; }
+  function applyTag() { var t = chosenTask(); if (t && t.tag && t.tag !== 'mine') document.documentElement.setAttribute('data-tag', t.tag); else document.documentElement.removeAttribute('data-tag'); }
+  // A skipped step is one tagged Possible: not done now, and AI could make it possible.
+  function isGhost(t) { return t.tag === 'possible'; }
+  function newTask(name, note, tag) { var t = { id: 't' + (state.seq++), name: name || '', note: note || '', tag: tag || null }; state.tasks.push(t); return t; }
+
+  // ---------- timeline ----------
+  // One column per step in workflow order. Skipped steps float above their column with a dashed drop to a dot on the line.
+  function renderTimeline(container, tasks, chosenId) {
+    container.textContent = '';
+    if (!tasks.length) { container.appendChild(el('div', 'empty', 'Your map will draw here as you list the steps.')); return; }
+    var tl = el('div', 'tl'); tl.style.gridTemplateColumns = 'repeat(' + tasks.length + ', minmax(140px, 1fr))'; tl.style.minWidth = (tasks.length * 140 + (tasks.length - 1) * 12) + 'px';
+    tasks.forEach(function (t, i) {
+      var col = i + 1; var gh = isGhost(t);
+      var g = el('div', 'cell ghost-cell'); g.style.gridColumn = col;
+      var c = el('div', 'cell conn' + (gh ? ' has' : '')); c.style.gridColumn = col;
+      var m = el('div', 'cell main-cell' + (i === tasks.length - 1 ? ' last' : '')); m.style.gridColumn = col;
+      var box = el('div', 'box' + (gh ? ' ghost' : '') + (t.tag ? ' ' + t.tag : '') + (chosenId && t.id === chosenId ? ' chosen' : ''));
+      if (gh) box.appendChild(el('div', 'ghost-lbl', 'Skipped'));
+      box.appendChild(el('div', 't', t.name || (gh ? '(unnamed step)' : 'Step ' + (i + 1))));
+      if (t.note) box.appendChild(el('div', 'd', t.note));
+      if (t.tag) box.appendChild(el('div', 'd', TAGS[t.tag]));
+      if (gh) { g.appendChild(box); m.appendChild(el('div', 'gap')); } else { m.appendChild(box); }
+      tl.appendChild(g); tl.appendChild(c); tl.appendChild(m);
+    });
+    container.appendChild(tl);
+  }
+
+  // ---------- map 1a: list ----------
+  function renderList() {
+    var list = $('tasklist'); list.textContent = '';
+    state.tasks.forEach(function (t, i) {
+      var row = el('div', 'trow' + (isGhost(t) ? ' ghost' : ''));
+      row.appendChild(el('span', 'disc', String(i + 1)));
+      var name = el('input', 'name'); name.type = 'text'; name.value = t.name; name.placeholder = 'Step ' + (i + 1); name.setAttribute('aria-label', 'Step ' + (i + 1) + ' name');
+      name.addEventListener('input', function () { t.name = name.value; save(); renderListWhy(); });
+      name.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); if (i === state.tasks.length - 1) { newTask('', '', null); save(); renderList(); focusName(state.tasks.length - 1); } else { focusName(i + 1); } } });
+      var note = el('input', 'note'); note.type = 'text'; note.value = t.note; note.placeholder = 'what happens here (optional)'; note.setAttribute('aria-label', 'What happens in step ' + (i + 1));
+      note.addEventListener('input', function () { t.note = note.value; save(); });
+      row.appendChild(name); row.appendChild(note);
+      var ctl = el('div', 'ctl');
+      var up = el('button', 'pillbtn', '↑'); up.type = 'button'; up.setAttribute('aria-label', 'Move up'); up.disabled = i === 0; up.addEventListener('click', function () { state.tasks.splice(i - 1, 0, state.tasks.splice(i, 1)[0]); save(); renderList(); });
+      var dn = el('button', 'pillbtn', '↓'); dn.type = 'button'; dn.setAttribute('aria-label', 'Move down'); dn.disabled = i === state.tasks.length - 1; dn.addEventListener('click', function () { state.tasks.splice(i + 1, 0, state.tasks.splice(i, 1)[0]); save(); renderList(); });
+      var rm = el('button', 'link', 'Remove'); rm.type = 'button'; rm.addEventListener('click', function () { state.tasks = state.tasks.filter(function (x) { return x.id !== t.id; }); if (state.chosen === t.id) state.chosen = null; save(); applyTag(); renderList(); });
+      ctl.appendChild(up); ctl.appendChild(dn); ctl.appendChild(rm); row.appendChild(ctl);
+      list.appendChild(row);
+    });
+    if (!state.tasks.length) list.appendChild(el('div', 'empty', 'No steps yet. Add the first one, or start from the model above.'));
+    renderListWhy();
+  }
+  function focusName(i) { var inputs = document.querySelectorAll('#tasklist input.name'); if (inputs[i]) inputs[i].focus(); }
+  function renderListWhy() {
+    var named = state.tasks.filter(function (t) { return t.name.trim(); }).length;
+    $('to-tag').disabled = named < 2;
+    $('list-why').textContent = named < 2 ? 'List at least two steps, in the order they happen.' : '';
+  }
+  $('add-task').addEventListener('click', function () { newTask('', '', null); save(); renderList(); focusName(state.tasks.length - 1); });
+  $('use-model').addEventListener('click', function () {
+    MODEL.forEach(function (m) { newTask(m.name, m.note, m.ghost ? 'possible' : null); });
+    save(); renderList(); toast('Model loaded. Rename, reorder, add, or remove steps to make it yours.');
+  });
+  $('to-tag').addEventListener('click', function () { if ($('to-tag').disabled) return; setSub('tag'); });
+
+  // ---------- 2: tag the steps ----------
+  function renderTag() {
+    renderTimeline($('my-tl'), state.tasks, state.chosen);
+    var list = $('taglist'); list.textContent = '';
+    state.tasks.forEach(function (t, i) {
+      var row = el('div', 'tagrow' + (isGhost(t) ? ' ghost' : '') + (state.chosen === t.id ? ' on' : ''));
+      var sw = el('div', 'sw'); var swb = el('button'); swb.type = 'button'; swb.setAttribute('role', 'switch');
+      var can = t.tag && t.tag !== 'mine'; swb.setAttribute('aria-checked', String(state.chosen === t.id)); swb.disabled = !can;
+      swb.setAttribute('aria-label', 'Work on this step'); swb.title = can ? 'Work on this one today' : 'Tag it Faster, Better, or Possible first';
+      swb.addEventListener('click', function () { state.chosen = (state.chosen === t.id ? null : t.id); save(); applyTag(); renderTag(); });
+      sw.appendChild(swb); sw.appendChild(el('span', 'lbl', state.chosen === t.id ? 'Working on' : 'Work on'));
+      row.appendChild(sw);
+      row.appendChild(el('span', 'disc', String(i + 1)));
+      if (t.name.trim()) row.appendChild(el('span', 'name', t.name));
+      else { var nm = el('input', 'name'); nm.type = 'text'; nm.placeholder = 'Name the step you skip'; nm.setAttribute('aria-label', 'Step name'); nm.addEventListener('input', function () { t.name = nm.value; save(); renderTimeline($('my-tl'), state.tasks, state.chosen); }); row.appendChild(nm); }
+      var chips = el('div', 'chips');
+      TAG_ORDER.forEach(function (k) {
+        var tb = el('button', 'tagchip ' + k, TAGS[k]); tb.type = 'button'; tb.setAttribute('aria-pressed', String(t.tag === k));
+        tb.addEventListener('click', function () { t.tag = (t.tag === k ? null : k); if (state.chosen === t.id && (t.tag === 'mine' || !t.tag)) state.chosen = null; save(); applyTag(); renderTag(); });
+        chips.appendChild(tb);
+      });
+      row.appendChild(chips);
+      list.appendChild(row);
+    });
+    var untagged = state.tasks.filter(function (t) { return !t.tag; }).length;
+    var why = $('map-why');
+    if (untagged) why.textContent = untagged + (untagged === 1 ? ' step still needs a tag.' : ' steps still need a tag.');
+    else if (!state.chosen) why.textContent = 'Every step is tagged. Now flip the switch on the one Faster, Better, or Possible step you\'ll work on today. Mine stays yours.';
+    else why.textContent = '';
+  }
+  $('add-ghost').addEventListener('click', function () { newTask('', '', 'possible'); save(); renderTag(); var inputs = document.querySelectorAll('#taglist input.name'); if (inputs.length) inputs[inputs.length - 1].focus(); });
+
+  function setSub(name) {
+    state.sub = name; save();
+    $('sub-list').hidden = name !== 'list'; $('sub-tag').hidden = name !== 'tag';
+    Array.prototype.forEach.call(document.querySelectorAll('.substeps [data-sub]'), function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-sub') === name)); });
+    if (name === 'list') renderList(); else renderTag();
+    var top = document.querySelector('.substeps'); if (top && document.activeElement && document.activeElement.tagName === 'BUTTON') { try { top.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (e) {} }
+  }
+  Array.prototype.forEach.call(document.querySelectorAll('[data-sub]'), function (b) { b.addEventListener('click', function () { setSub(b.getAttribute('data-sub')); }); });
+
+  function notesText() {
+    var t = chosenTask(); var L = [];
+    L.push('MY WORKFLOW, IN ORDER');
+    state.tasks.forEach(function (x, i) { L.push((i + 1) + '. ' + (isGhost(x) ? 'SKIPPED: ' : '') + (x.name || '(unnamed)') + (x.note ? ' (' + x.note + ')' : '') + (x.tag ? ' · ' + TAGS[x.tag] : '')); });
+    L.push('Working on: ' + (t ? (t.name || '(unnamed)') + ' · ' + TAGS[t.tag] : '(none)'));
+    return L.join('\n');
+  }
+
+  // ---------- copy / toast ----------
+  var toastTimer;
+  function toast(msg) { var t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(function () { t.classList.remove('show'); }, 2200); }
+  function copy(text, msg) {
+    var done = function () { toast(msg || 'Copied'); };
+    var fail = function () {
+      var ta = document.createElement('textarea'); ta.value = text; ta.setAttribute('readonly', ''); ta.style.position = 'fixed'; ta.style.left = '-9999px';
+      document.body.appendChild(ta); ta.select();
+      var ok = false; try { ok = document.execCommand('copy'); } catch (e) {}
+      document.body.removeChild(ta);
+      toast(ok ? (msg || 'Copied') : 'Select the text and copy it yourself');
+    };
+    try { if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, fail); else fail(); } catch (e) { fail(); }
+  }
+
+
+  // ---------- map as an image ----------
+  function cssVar(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+  function wrapLines(ctx, text, maxW) {
+    var words = String(text).split(/\s+/), lines = [], cur = '';
+    words.forEach(function (w) { var t = cur ? cur + ' ' + w : w; if (ctx.measureText(t).width > maxW && cur) { lines.push(cur); cur = w; } else { cur = t; } });
+    if (cur) lines.push(cur); return lines;
+  }
+  function drawMap() {
+    var tasks = state.tasks; var t = chosenTask();
+    var navy = cssVar('--navy') || '#222244', grey = cssVar('--grey-label') || '#757575', lightGrey = cssVar('--light-grey') || '#f7f7f7', white = '#ffffff';
+    var fills = { faster: cssVar('--teal-200'), better: cssVar('--blue-200'), possible: cssVar('--mandarin-200'), mine: lightGrey };
+    var inks = { faster: cssVar('--teal-600'), better: cssVar('--blue-600'), possible: cssVar('--mandarin-600'), mine: navy };
+    var colW = 190, gap = 16, padX = 48, padTop = 96, ghostH = 104, mainH = 116, connH = 44, footH = 56;
+    var n = Math.max(tasks.length, 1);
+    var W = padX * 2 + n * colW + (n - 1) * gap, H = padTop + ghostH + connH + mainH + footH;
+    var scale = 2, c = document.createElement('canvas'); c.width = W * scale; c.height = H * scale;
+    var ctx = c.getContext('2d'); ctx.scale(scale, scale);
+    var font = '"Poppins", -apple-system, "Segoe UI", Roboto, Arial, sans-serif';
+    ctx.fillStyle = white; ctx.fillRect(0, 0, W, H);
+    // title
+    ctx.fillStyle = navy; ctx.font = '700 22px ' + font; ctx.textBaseline = 'top'; ctx.fillText('My workflow', padX, 28);
+    ctx.font = '400 13px ' + font; ctx.fillStyle = grey;
+    ctx.fillText(t ? 'Working on: ' + (t.name || '(unnamed)') + '  ·  ' + TAGS[t.tag] : 'Tagged with Faster, Better, Possible, Mine', padX, 60);
+    var ghostTop = padTop, mainTop = padTop + ghostH + connH, lineY = mainTop + mainH / 2;
+    // baseline
+    ctx.strokeStyle = navy; ctx.lineWidth = 1; ctx.setLineDash([]); ctx.beginPath(); ctx.moveTo(padX, lineY); ctx.lineTo(W - padX, lineY); ctx.stroke();
+    tasks.forEach(function (task, i) {
+      var x = padX + i * (colW + gap), gh = isGhost(task), top = gh ? ghostTop : mainTop, h = gh ? ghostH : mainH;
+      var chosen = state.chosen === task.id;
+      if (gh) { // dashed drop to a dot on the line
+        ctx.strokeStyle = grey; ctx.setLineDash([3, 3]); ctx.beginPath(); ctx.moveTo(x + colW / 2, top + h); ctx.lineTo(x + colW / 2, lineY); ctx.stroke(); ctx.setLineDash([]);
+        ctx.fillStyle = navy; ctx.beginPath(); ctx.arc(x + colW / 2, lineY, 5, 0, Math.PI * 2); ctx.fill();
+      }
+      if (chosen) { ctx.fillStyle = inks[task.tag] || navy; ctx.fillRect(x + 8, top + 8, colW, h); }
+      ctx.fillStyle = (task.tag && fills[task.tag]) || white; ctx.fillRect(x, top, colW, h);
+      ctx.strokeStyle = gh ? grey : navy; ctx.lineWidth = 1; ctx.setLineDash(gh ? [4, 3] : []); ctx.strokeRect(x + 0.5, top + 0.5, colW - 1, h - 1); ctx.setLineDash([]);
+      var ty = top + 12;
+      if (gh) { ctx.fillStyle = grey; ctx.font = '700 10px ' + font; ctx.fillText('SKIPPED', x + 12, ty); ty += 16; }
+      ctx.fillStyle = chosen ? (inks[task.tag] || navy) : navy; ctx.font = '700 14px ' + font;
+      wrapLines(ctx, task.name || 'Step ' + (i + 1), colW - 24).slice(0, 3).forEach(function (ln) { ctx.fillText(ln, x + 12, ty); ty += 17; });
+      ctx.fillStyle = grey; ctx.font = '400 11px ' + font;
+      if (task.note) wrapLines(ctx, task.note, colW - 24).slice(0, 2).forEach(function (ln) { ctx.fillText(ln, x + 12, ty); ty += 14; });
+      if (task.tag) { ctx.fillStyle = navy; ctx.font = '500 11px ' + font; ctx.fillText(TAGS[task.tag], x + 12, ty); }
+    });
+    // legend + credit
+    var ly = H - footH + 16;
+    ctx.strokeStyle = navy; ctx.setLineDash([]); ctx.strokeRect(padX + 0.5, ly + 0.5, 11, 11); ctx.fillStyle = grey; ctx.font = '400 11px ' + font; ctx.fillText('Done, most of the time', padX + 18, ly);
+    ctx.strokeStyle = grey; ctx.setLineDash([3, 2]); ctx.strokeRect(padX + 180.5, ly + 0.5, 11, 11); ctx.setLineDash([]); ctx.fillText('Skipped for time or capacity', padX + 198, ly);
+    ctx.fillText("Tags adapted from Philippa Hardman's four kinds of help AI can offer. Mine is aiEDU's addition.", padX, ly + 20);
+    return c;
+  }
+  function mapBlob(cb) { drawMap().toBlob(function (b) { cb(b); }, 'image/png'); }
+  $('copy-img').addEventListener('click', function () {
+    if (!state.tasks.length) { toast('Nothing to copy yet. List a few steps first.'); return; }
+    try {
+      if (!navigator.clipboard || !window.ClipboardItem) throw new Error('no clipboard');
+      var item = new ClipboardItem({ 'image/png': new Promise(function (res) { mapBlob(res); }) });
+      navigator.clipboard.write([item]).then(function () { toast('Map copied as an image. Paste it into a slide or doc.'); }, function () { toast('This browser won’t copy images. Use Download image instead.'); });
+    } catch (e) { toast('This browser won’t copy images. Use Download image instead.'); }
+  });
+  $('dl-img').addEventListener('click', function () {
+    if (!state.tasks.length) { toast('Nothing to download yet. List a few steps first.'); return; }
+    mapBlob(function (b) {
+      // Inside claude.ai the viewer mediates saves; anywhere else (Vercel) the browser downloads directly.
+      var viaBrowser = function () {
+        try { var url = URL.createObjectURL(b); var a = document.createElement('a'); a.href = url; a.download = 'my-workflow.png'; document.body.appendChild(a); a.click(); document.body.removeChild(a); setTimeout(function () { URL.revokeObjectURL(url); }, 2000); toast('Downloading my-workflow.png'); }
+        catch (e) { toast('Download did not start. Try Copy as image.'); }
+      };
+      if (window.claude && typeof window.claude.use === 'function') {
+        window.claude.use('downloads').then(function (dl) {
+          if (!dl) { viaBrowser(); return; }
+          dl.save({ filename: 'my-workflow.png', data: b }).then(function () { toast('Saved my-workflow.png'); }, function (err) { if (err && err.code === 'declined') toast('Not saved.'); else viaBrowser(); });
+        }, viaBrowser);
+      } else { viaBrowser(); }
+    });
+  });
+
+  $('copy-all').addEventListener('click', function () { copy(notesText(), 'Map copied as text.'); });
+  var resetArmed = false;
+  $('reset').addEventListener('click', function () {
+    if (!resetArmed) { resetArmed = true; $('reset').textContent = 'Click again to clear everything'; setTimeout(function () { resetArmed = false; $('reset').textContent = 'Start over'; }, 4000); return; }
+    state = fresh(); save(); try { localStorage.removeItem(KEY); } catch (e) {}
+    applyTag(); setSub('list'); resetArmed = false; $('reset').textContent = 'Start over'; toast('Cleared');
+  });
+
+  // boot
+  renderTimeline($('model-tl'), MODEL.map(function (m, i) { return { id: 'm' + i, name: m.name, note: m.note, tag: m.ghost ? 'possible' : null }; }), null);
+  applyTag(); setSub(state.sub || 'list');
+})();
+</script>
+
+</body>
+</html>
